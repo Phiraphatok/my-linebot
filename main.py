@@ -1,18 +1,16 @@
 import os
+import requests
 from fastapi import FastAPI, Request, HTTPException
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
-from huggingface_hub import InferenceClient
 
 app = FastAPI()
 
 line_bot_api = LineBotApi(os.environ["LINE_CHANNEL_ACCESS_TOKEN"])
 handler = WebhookHandler(os.environ["LINE_CHANNEL_SECRET"])
-hf_client = InferenceClient(
-    model=os.environ["HF_MODEL_NAME"],
-    token=os.environ["HF_TOKEN"]
-)
+
+HF_SPACE_URL = os.environ["HF_SPACE_URL"]
 
 conversation_history = {}
 
@@ -43,15 +41,18 @@ def handle_message(event):
         "content": user_text
     })
 
-    response = hf_client.chat_completion(
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            *conversation_history[user_id]
-        ],
-        max_tokens=500
+    messages = [
+        {"role": "system", "content": "You are a helpful assistant."},
+        *conversation_history[user_id]
+    ]
+
+    response = requests.post(
+        f"{HF_SPACE_URL}/chat",
+        json={"messages": messages, "max_tokens": 500},
+        timeout=60
     )
 
-    bot_reply = response.choices[0].message.content
+    bot_reply = response.json()["response"]
 
     conversation_history[user_id].append({
         "role": "assistant",
