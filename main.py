@@ -2,6 +2,8 @@ import os
 import time
 import requests
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.responses import HTMLResponse
+from pathlib import Path
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
@@ -16,8 +18,14 @@ HF_SPACE_URL = os.environ["HF_SPACE_URL"]
 conversation_history = {}
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 def root():
+    html = Path("chat.html").read_text(encoding="utf-8")
+    return HTMLResponse(content=html)
+
+
+@app.get("/health")
+def health():
     return {"status": "LINE Bot is running!"}
 
 
@@ -37,8 +45,8 @@ def call_hf_api(messages: list, max_retries: int = 3) -> str:
         try:
             response = requests.post(
                 f"{HF_SPACE_URL}/chat",
-                json={"messages": messages, "max_tokens": 500},
-                timeout=60
+                json={"messages": messages, "max_tokens": 150},
+                timeout=180  # CPU ช้า ให้เวลา 3 นาที
             )
 
             # Log สำหรับ debug
