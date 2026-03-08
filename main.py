@@ -1,6 +1,4 @@
 import os
-import gc
-import torch
 from fastapi import FastAPI, Request, HTTPException
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
@@ -47,7 +45,7 @@ def handle_message(event):
 
     response = hf_client.chat_completion(
         messages=[
-            {"role": "system", "content": "คุณคือผู้ช่วย AI ที่ตอบภาษาไทย กระชับ และเป็นประโยชน์"},
+            {"role": "system", "content": "You are a helpful assistant."},
             *conversation_history[user_id]
         ],
         max_tokens=500
@@ -67,16 +65,3 @@ def handle_message(event):
         event.reply_token,
         TextSendMessage(text=bot_reply)
     )
-```
-
-**📄 requirements.txt**
-```
-fastapi
-uvicorn
-line-bot-sdk
-huggingface-hub
-```
-
-**📄 Procfile**
-```
-web: uvicorn main:app --host 0.0.0.0 --port $PORT
