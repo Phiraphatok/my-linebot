@@ -71,8 +71,9 @@ def call_hf_api(messages: list, max_retries: int = 3) -> str:
         try:
             response = requests.post(
                 f"{HF_SPACE_URL}/chat",
-                json={"messages": messages, "max_tokens": 150},
-                timeout=180  # CPU ช้า ให้เวลา 3 นาที
+                json={"messages": messages, "max_tokens": 300},
+                headers={"ngrok-skip-browser-warning": "true"},
+                timeout=180
             )
 
             # Log สำหรับ debug
