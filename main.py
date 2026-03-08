@@ -2,13 +2,23 @@ import os
 import time
 import requests
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
+from pydantic import BaseModel
+from typing import List
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, TextSendMessage
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 line_bot_api = LineBotApi(os.environ["LINE_CHANNEL_ACCESS_TOKEN"])
 handler = WebhookHandler(os.environ["LINE_CHANNEL_SECRET"])
@@ -27,6 +37,22 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "LINE Bot is running!"}
+
+
+
+class WebMessage(BaseModel):
+    role: str
+    content: str
+
+class WebChatRequest(BaseModel):
+    messages: List[WebMessage]
+    max_tokens: int = 150
+
+@app.post("/api/chat")
+async def api_chat(request: WebChatRequest):
+    messages = [{"role": m.role, "content": m.content} for m in request.messages]
+    reply = call_hf_api(messages)
+    return JSONResponse({"response": reply})
 
 
 @app.post("/webhook")
